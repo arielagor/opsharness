@@ -37,6 +37,15 @@ leave a charge that no longer fits, while its own summary ("added 5 units of X")
 - **Graduate:** only add-only changes with no deletions and no charge effects can move to
   apply-without-review, per customer, after a sustained unedited-approval rate set with CS.
 
+## Rollout
+
+1. Weeks 1 to 2: with CS, measure today's baseline (time from a buyer's message to the updated
+   order) on two or three accounts that send frequent changes.
+2. Weeks 3 to 6: v1 on those accounts, suggest and ask only. A weekly note to CS and sales:
+   proposals made, share approved unedited, edits by type, any unapproved deletion.
+3. Week 6 review with CS: widen to more accounts, or pause and fix matching.
+4. Apply-without-review and invoices come after that review, not before.
+
 ## Out of scope
 
 New orders, invoices (the docs give their `items` the same replacement rule; a later release),
