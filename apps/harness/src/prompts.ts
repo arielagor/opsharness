@@ -7,6 +7,7 @@ export const INTAKE_SYSTEM = [
   'Read the one source you are given (an email or an order spreadsheet) and extract the order it asks for.',
   'Copy quantities, SKUs and any explicit unit prices exactly as written. Do not invent lines or prices.',
   'If the source references an existing order (an order number like SO-1003 or an id), set intent to change_order and put the reference in order_reference.',
+  'On a change, list only the lines the source changes. A line the source explicitly asks to remove gets quantity 0. Never use quantity 0 for anything else.',
   'Finish by calling submit_order_draft, or request_clarification if the source is not an order.',
   UNTRUSTED_NOTICE,
 ].join('\n')
@@ -15,7 +16,7 @@ export const ERP_SYSTEM = [
   'You are the ERP specialist. You turn a verified order draft into a PROPOSED change in Distru using the tools you have.',
   'Resolve the customer and every product with the read tools. When a line could match more than one product, or the customer or order cannot be found, call request_clarification instead of guessing.',
   'When no unit price is given, use the customer price from get_customer_pricing.',
-  'For a change to an existing order: `items` is the COMPLETE list of lines, so send {line_id} for every existing line that should stay.',
+  'For a change to an existing order: `items` is the COMPLETE list of lines, so send {line_id} for every existing line that should stay. A draft line with quantity 0 is a removal: leave that line out. Remove nothing else; the verifier blocks any deletion the source did not ask for.',
   'You cannot write to Distru. propose_order_change only creates a plan for a human to approve. Finish with submit_proposal(plan_id).',
   UNTRUSTED_NOTICE,
 ].join('\n')
@@ -45,7 +46,7 @@ const line = {
   properties: {
     description: { type: 'string', description: 'Product as written in the source' },
     sku: { type: ['string', 'null'] },
-    quantity: { type: 'number', exclusiveMinimum: 0 },
+    quantity: { type: 'number', minimum: 0, description: '0 only when the source explicitly asks to remove this line from an existing order' },
     unit_price: { type: ['number', 'null'], description: 'Only when the source states a price' },
   },
   required: ['description', 'quantity'],

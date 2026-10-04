@@ -40,7 +40,8 @@ async function data(tb: Toolbox, tool: string, args: Record<string, unknown>): P
 /**
  * The verifier is code, not a model. It re-reads Distru through its own read-only principal and
  * checks the PLAN (the exact request that would be sent) against the SOURCE (the draft):
- * licence, stock, price floor, one product per source line, and nothing the source did not ask for.
+ * licence, the source's customer owns the order, stock, price floor, one product per source line,
+ * nothing added or changed that the source did not ask for, and nothing deleted that it did not name.
  */
 export async function verify(input: { draft: OrderDraft; plan: Plan; toolbox: Toolbox; injectionSuspected: boolean }): Promise<Verdict> {
   const { draft, plan, toolbox } = input
@@ -87,6 +88,7 @@ export async function verify(input: { draft: OrderDraft; plan: Plan; toolbox: To
 
   // 2. One product per source line, and the plan matches the source.
   const matched = new Set<string>()
+  const removalsRequested = new Set<string>()
   for (const line of draft.lines) {
     const found = (await data(toolbox, 'search_products', { query: line.sku ?? line.description }))['products'] as CatalogItem[]
     const m = matchProduct(line, found)
@@ -99,6 +101,13 @@ export async function verify(input: { draft: OrderDraft; plan: Plan; toolbox: To
       continue
     }
     matched.add(m.product.product_id)
+    if (line.quantity === 0) {
+      // A removal the source asked for: the line must be among the plan's deletions, and only it.
+      removalsRequested.add(m.product.product_id)
+      const gone = d.lines.deleted.some((l) => l.product_id === m.product.product_id)
+      check('plan_matches_source', gone, gone ? `${m.product.sku}: removed as requested.` : `The source asks to remove ${m.product.sku ?? m.product.name}, but the plan does not remove it.`)
+      continue
+    }
     const inPlan = proposedLines.find((l) => l.product_id === m.product.product_id)
     if (!inPlan) check('plan_matches_source', false, `The source asks for ${line.quantity} x ${m.product.sku ?? m.product.name}, but the plan does not include it.`)
     else if (inPlan.quantity !== line.quantity) check('plan_matches_source', false, `${m.product.sku}: the source says ${line.quantity}, the plan says ${inPlan.quantity}.`)
@@ -107,6 +116,14 @@ export async function verify(input: { draft: OrderDraft; plan: Plan; toolbox: To
   }
   for (const l of touched) {
     if (!matched.has(l.product_id) && !needsClarification) check('plan_matches_source', false, `The plan adds or changes ${l.sku} x${l.quantity}, which the source did not ask for.`)
+  }
+
+  // 2b. No deletion the source did not ask for. Distru deletes any existing line left out of `items`,
+  // so a plan that rebuilt the line list from the source alone deletes lines nobody mentioned. The
+  // diff already names them; this makes such a plan unapprovable instead of merely flagged.
+  for (const l of d.lines.deleted) {
+    const asked = removalsRequested.has(l.product_id)
+    check('no_unrequested_deletion', asked, asked ? `${l.sku}: deletion requested by the source.` : `The plan deletes ${l.sku} x${l.quantity} (line ${l.line_id}), which the source did not ask to remove. Lines the source does not change must be sent by line_id.`)
   }
 
   // 3. Stock: available = active - reserved; a changed line needs only its increase.

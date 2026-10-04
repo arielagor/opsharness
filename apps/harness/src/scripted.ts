@@ -28,6 +28,7 @@ interface Seen {
 }
 
 const LINE = /^\s*-\s*(\d+(?:\.\d+)?)\s*x\s+(.+?)(?:\s+\(([A-Z0-9][A-Z0-9-]+)\))?(?:\s*@\s*(\d+(?:\.\d+)?))?\s*$/
+const REMOVE = /^\s*-\s*(?:remove|drop|delete)\s+(.+?)(?:\s+\(([A-Z0-9][A-Z0-9-]+)\))?\s*$/i
 const BUSINESS = /\b([A-Z][a-z]+(?: [A-Z][a-z]+)* (?:Wellness|Dispensary|Retail|Collective|Delivery))\b/
 const ORDER_NO = /\b(SO-\d+)\b/
 const UUID = /\b([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\b/
@@ -82,6 +83,12 @@ function intakeStep(messages: BaseMessage[], b: ScriptBehaviour): Call {
   const lines: Record<string, unknown>[] = []
   const quoted: string[] = []
   for (const raw of src.text.split('\n')) {
+    const r = raw.match(REMOVE)
+    if (r) {
+      quoted.push(raw.trim())
+      lines.push({ description: r[1]!.trim(), sku: r[2] ?? null, quantity: 0, unit_price: null })
+      continue
+    }
     const m = raw.match(LINE)
     if (!m) continue
     quoted.push(raw.trim())
@@ -174,11 +181,19 @@ function erpStep(messages: BaseMessage[], b: ScriptBehaviour): Call {
       }
     }
     const current: OrderJson = order
-    const items: Record<string, unknown>[] = draft.lines.map((l, i) => {
+    const removed = new Set<string>()
+    const items: Record<string, unknown>[] = []
+    for (const [i, l] of draft.lines.entries()) {
       const existing = current.lines.find((x) => x.product_id === productIds[i])
-      return existing ? { line_id: existing.line_id, quantity: l.quantity, ...(l.unit_price != null ? { price: l.unit_price } : {}) } : { product_id: productIds[i], quantity: l.quantity, price: priceFor(i) }
-    })
-    if (b.keepExistingLines) for (const x of current.lines) if (!items.some((it) => it['line_id'] === x.line_id)) items.push({ line_id: x.line_id })
+      if (l.quantity === 0) {
+        // A removal: Distru deletes a line by leaving it out of `items`.
+        if (!existing) return clarify(`${l.sku ?? l.description} is not on order ${draft.order_reference}, so it cannot be removed.`)
+        removed.add(existing.line_id)
+        continue
+      }
+      items.push(existing ? { line_id: existing.line_id, quantity: l.quantity, ...(l.unit_price != null ? { price: l.unit_price } : {}) } : { product_id: productIds[i], quantity: l.quantity, price: priceFor(i) })
+    }
+    if (b.keepExistingLines) for (const x of current.lines) if (!removed.has(x.line_id) && !items.some((it) => it['line_id'] === x.line_id)) items.push({ line_id: x.line_id })
     return { name: 'propose_order_change', args: { order_id: current.order_id, items, rationale } }
   }
   if (!proposed.ok) return clarify(`Distru refused the proposal: ${proposed.text}`)

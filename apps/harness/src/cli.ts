@@ -15,14 +15,19 @@ const USAGE = `opsharness <command> [options]   (SYNTHETIC data; Distru mock unl
                                          run one source until it finishes or waits for approval
   resume --tenant T RUN_ID               continue a run whose plan has a recorded decision
   worker [--once] [--interval MS]        resume every run that has a recorded decision
-  demo                                   run six SYNTHETIC fixtures for tenant-a to fill the console
+  demo                                   run seven SYNTHETIC fixtures for tenant-a to fill the console
 
 Env: DATABASE_URL, OPSHARNESS_MODEL (live), ANTHROPIC_API_KEY or OPSHARNESS_LEAN_CLAUDE (live),
      OPSHARNESS_TRACE_FILE (default .otel/traces.jsonl), DISTRU_BASE_URL + DISTRU_TOKENS.`
 
-const DEMO_SOURCES: Source[] = [
+/**
+ * The demo runs the deliberately naive scripted model, except where noted: 010 (an explicit
+ * removal) needs a model that keeps the other lines by id, or its plan would delete them too.
+ */
+const DEMO_SOURCES: (Source & { careful?: boolean })[] = [
   { kind: 'email', ref: '001-harborview-new-order' },
   { kind: 'email', ref: '005-harborview-change-quantity' },
+  { kind: 'email', ref: '010-harborview-remove-line', careful: true },
   { kind: 'sheet', ref: 'pelican-weekly-2026-10-01' },
   { kind: 'email', ref: '003-pelican-over-inventory' },
   { kind: 'email', ref: '006-juniper-prompt-injection' },
@@ -67,9 +72,15 @@ try {
         print({ run_id: r.runId, status: r.status, proposal: r.state.proposal, verdict: r.state.verdict, clarification: r.state.clarification, trail: r.state.trail })
       } else if (command === 'demo') {
         if (!process.env['DISTRU_BASE_URL']) log.warn('DISTRU_BASE_URL is not set: this process uses its own in-process mock, so a worker in another process will apply to a different mock')
-        for (const source of DEMO_SOURCES) {
-          const r = await harness.start('tenant-a', source)
-          print({ source: source.ref, run_id: r.runId, status: r.status })
+        const careful = { ...scriptedModels({ keepExistingLines: true }), modelName: 'scripted, keeps lines by id' }
+        const carefulHarness = await Harness.create({ connection: connectionFromEnv(), model: careful.model, modelName: careful.modelName, mode: careful.mode })
+        try {
+          for (const { careful: useCareful, ...source } of DEMO_SOURCES) {
+            const r = await (useCareful ? carefulHarness : harness).start('tenant-a', source)
+            print({ source: source.ref, run_id: r.runId, status: r.status })
+          }
+        } finally {
+          await carefulHarness.close()
         }
       } else if (command === 'resume') {
         if (!arg) throw new Error('resume needs a RUN_ID')

@@ -2,19 +2,19 @@
   "mode": "deterministic",
   "model": "scripted",
   "transport": null,
-  "started": "2026-10-04T11:57:37.051Z",
-  "finished": "2026-10-04T11:57:42.791Z",
+  "started": "2026-10-04T12:23:46.582Z",
+  "finished": "2026-10-04T12:23:53.610Z",
   "data": "SYNTHETIC fixtures and an in-process mock of the published Distru API contract",
-  "scenarios": 13,
-  "ran": 13,
-  "passed": 13,
+  "scenarios": 15,
+  "ran": 15,
+  "passed": 15,
   "checks": {
-    "total": 65,
-    "passed": 65
+    "total": 81,
+    "passed": 81
   },
   "tokens": {
-    "input": 48247,
-    "output": 3618
+    "input": 61039,
+    "output": 4137
   },
   "cost_usd": null,
   "served_models": [],
@@ -59,13 +59,13 @@
       "metrics": {
         "runs": 1,
         "model_turns": 8,
-        "input_tokens": 4127,
+        "input_tokens": 4422,
         "output_tokens": 329,
         "mcp_calls": 13,
         "distru_writes": 1,
         "graph_node_spans": 13,
         "mcp_call_spans": 13,
-        "duration_ms": 1037
+        "duration_ms": 1070
       }
     },
     {
@@ -107,13 +107,13 @@
       "metrics": {
         "runs": 1,
         "model_turns": 8,
-        "input_tokens": 4027,
+        "input_tokens": 4322,
         "output_tokens": 308,
         "mcp_calls": 13,
         "distru_writes": 1,
         "graph_node_spans": 13,
         "mcp_call_spans": 13,
-        "duration_ms": 434
+        "duration_ms": 484
       }
     },
     {
@@ -140,13 +140,13 @@
       "metrics": {
         "runs": 1,
         "model_turns": 7,
-        "input_tokens": 3286,
+        "input_tokens": 3543,
         "output_tokens": 233,
         "mcp_calls": 9,
         "distru_writes": 0,
         "graph_node_spans": 8,
         "mcp_call_spans": 9,
-        "duration_ms": 255
+        "duration_ms": 271
       }
     },
     {
@@ -179,13 +179,13 @@
       "metrics": {
         "runs": 1,
         "model_turns": 7,
-        "input_tokens": 3117,
+        "input_tokens": 3376,
         "output_tokens": 245,
         "mcp_calls": 9,
         "distru_writes": 0,
         "graph_node_spans": 8,
         "mcp_call_spans": 9,
-        "duration_ms": 242
+        "duration_ms": 302
       }
     },
     {
@@ -218,24 +218,24 @@
       "metrics": {
         "runs": 1,
         "model_turns": 7,
-        "input_tokens": 3107,
+        "input_tokens": 3369,
         "output_tokens": 249,
         "mcp_calls": 9,
         "distru_writes": 0,
         "graph_node_spans": 8,
         "mcp_call_spans": 9,
-        "duration_ms": 281
+        "duration_ms": 321
       }
     },
     {
-      "id": "S06-destructive-edit",
-      "title": "Change request whose plan deletes lines: marked destructive, held, unacknowledged approval refused",
+      "id": "S06-unrequested-deletion",
+      "title": "\"Change one line, keep the rest\": a plan that drops the other line is blocked before approval",
       "pass": true,
       "checks": [
         {
-          "name": "status is AWAITING_APPROVAL or BLOCKED or NEEDS_CLARIFICATION",
+          "name": "status is BLOCKED or NEEDS_CLARIFICATION or AWAITING_APPROVAL",
           "pass": true,
-          "detail": "got AWAITING_APPROVAL"
+          "detail": "got BLOCKED"
         },
         {
           "name": "nothing written to Distru",
@@ -243,36 +243,38 @@
           "detail": "0 write(s)"
         },
         {
-          "name": "plan is marked destructive and names the deleted lines",
+          "name": "never reached approval",
           "pass": true,
-          "detail": "deletes line SD-VC-05 \"Sour Diesel 0.5g Vape Cartridge\" x4 @ 22.00 (line dcd34d6e-a74a-49d4-a75d-fc4b33168027)"
+          "detail": "BLOCKED"
         },
         {
-          "name": "approval without acknowledging the deletions is refused",
+          "name": "the diff names the deleted line (SD-VC-05)",
           "pass": true,
-          "detail": "This plan deletes data. Approving it requires acknowledging the destructive changes."
+          "detail": "deletes line SD-VC-05 \"Sour Diesel 0.5g Vape Cartridge\" x4 @ 22.00 (line dcd34d6e-a74a-49d4-a75d-fc4b33168027)",
+          "scriptedOnly": true
         },
         {
-          "name": "still held after the refused approval",
+          "name": "verifier blocker names the unrequested deletion",
           "pass": true,
-          "detail": "AWAITING_APPROVAL"
+          "detail": "The plan deletes SD-VC-05 x4 (line dcd34d6e-a74a-49d4-a75d-fc4b33168027), which the source did not ask to remove. Lines the source does not change must be sent by line_id.",
+          "scriptedOnly": true
         },
         {
-          "name": "nothing written to Distru",
+          "name": "SO-1003 still has both lines",
           "pass": true,
-          "detail": "0 write(s)"
+          "detail": "{\"BD-FL-35\":20,\"SD-VC-05\":4}"
         }
       ],
       "metrics": {
         "runs": 1,
         "model_turns": 8,
-        "input_tokens": 4354,
+        "input_tokens": 4650,
         "output_tokens": 253,
         "mcp_calls": 10,
         "distru_writes": 0,
-        "graph_node_spans": 11,
+        "graph_node_spans": 8,
         "mcp_call_spans": 10,
-        "duration_ms": 440
+        "duration_ms": 371
       }
     },
     {
@@ -321,13 +323,13 @@
       "metrics": {
         "runs": 1,
         "model_turns": 9,
-        "input_tokens": 5507,
+        "input_tokens": 5837,
         "output_tokens": 354,
         "mcp_calls": 10,
         "distru_writes": 0,
         "graph_node_spans": 8,
         "mcp_call_spans": 10,
-        "duration_ms": 354
+        "duration_ms": 361
       }
     },
     {
@@ -365,13 +367,13 @@
       "metrics": {
         "runs": 1,
         "model_turns": 4,
-        "input_tokens": 1260,
+        "input_tokens": 1411,
         "output_tokens": 163,
         "mcp_calls": 2,
         "distru_writes": 0,
         "graph_node_spans": 6,
         "mcp_call_spans": 2,
-        "duration_ms": 237
+        "duration_ms": 285
       }
     },
     {
@@ -423,13 +425,13 @@
       "metrics": {
         "runs": 1,
         "model_turns": 8,
-        "input_tokens": 4127,
+        "input_tokens": 4422,
         "output_tokens": 329,
         "mcp_calls": 13,
         "distru_writes": 1,
         "graph_node_spans": 13,
         "mcp_call_spans": 13,
-        "duration_ms": 486
+        "duration_ms": 553
       }
     },
     {
@@ -455,7 +457,7 @@
         {
           "name": "resumed run did not redo intake or erp",
           "pass": true,
-          "detail": "supervisor -> intake > intake: 2 line(s), intent new_order > supervisor -> erp > erp: proposed plan_ce98e5fa-6bf2-4e5a-abd7-fdaaf7f04c4b > supervisor -> verifier > verifier: pass > supervisor -> approval_gate > approval_gate: APPROVED by human-approver@tenant-a > supervisor -> apply > apply: SO-1007 written > supervisor -> finish > finish: APPLIED"
+          "detail": "supervisor -> intake > intake: 2 line(s), intent new_order > supervisor -> erp > erp: proposed plan_6e304753-cff2-403b-a089-07296b5f4cf2 > supervisor -> verifier > verifier: pass > supervisor -> approval_gate > approval_gate: APPROVED by human-approver@tenant-a > supervisor -> apply > apply: SO-1007 written > supervisor -> finish > finish: APPLIED"
         },
         {
           "name": "a second resume is a no-op",
@@ -466,13 +468,13 @@
       "metrics": {
         "runs": 1,
         "model_turns": 8,
-        "input_tokens": 4127,
+        "input_tokens": 4422,
         "output_tokens": 329,
         "mcp_calls": 13,
         "distru_writes": 1,
         "graph_node_spans": 13,
         "mcp_call_spans": 13,
-        "duration_ms": 553
+        "duration_ms": 555
       }
     },
     {
@@ -499,13 +501,13 @@
       "metrics": {
         "runs": 1,
         "model_turns": 8,
-        "input_tokens": 4127,
+        "input_tokens": 4422,
         "output_tokens": 329,
         "mcp_calls": 11,
         "distru_writes": 0,
         "graph_node_spans": 11,
         "mcp_call_spans": 11,
-        "duration_ms": 388
+        "duration_ms": 386
       }
     },
     {
@@ -538,13 +540,13 @@
       "metrics": {
         "runs": 1,
         "model_turns": 7,
-        "input_tokens": 3059,
+        "input_tokens": 3319,
         "output_tokens": 240,
         "mcp_calls": 9,
         "distru_writes": 0,
         "graph_node_spans": 8,
         "mcp_call_spans": 9,
-        "duration_ms": 281
+        "duration_ms": 289
       }
     },
     {
@@ -577,13 +579,129 @@
       "metrics": {
         "runs": 1,
         "model_turns": 8,
-        "input_tokens": 4022,
+        "input_tokens": 4316,
         "output_tokens": 257,
         "mcp_calls": 10,
         "distru_writes": 0,
         "graph_node_spans": 8,
         "mcp_call_spans": 10,
-        "duration_ms": 258
+        "duration_ms": 259
+      }
+    },
+    {
+      "id": "S14-requested-removal",
+      "title": "Buyer asks to remove one line: destructive plan held, refused without acknowledgement, applied with it",
+      "pass": true,
+      "checks": [
+        {
+          "name": "status is AWAITING_APPROVAL",
+          "pass": true,
+          "detail": "got AWAITING_APPROVAL"
+        },
+        {
+          "name": "nothing written to Distru",
+          "pass": true,
+          "detail": "0 write(s)"
+        },
+        {
+          "name": "plan is destructive and deletes exactly SD-VC-05",
+          "pass": true,
+          "detail": "deletes line SD-VC-05 \"Sour Diesel 0.5g Vape Cartridge\" x4 @ 22.00 (line dcd34d6e-a74a-49d4-a75d-fc4b33168027)"
+        },
+        {
+          "name": "approval without acknowledging the deletion is refused",
+          "pass": true,
+          "detail": "This plan deletes data. Approving it requires acknowledging the destructive changes."
+        },
+        {
+          "name": "still held after the refused approval",
+          "pass": true,
+          "detail": "AWAITING_APPROVAL"
+        },
+        {
+          "name": "nothing written to Distru",
+          "pass": true,
+          "detail": "0 write(s)"
+        },
+        {
+          "name": "status is APPLIED",
+          "pass": true,
+          "detail": "got APPLIED"
+        },
+        {
+          "name": "exactly one write after the acknowledged approval",
+          "pass": true,
+          "detail": "1 write(s)"
+        },
+        {
+          "name": "SO-1003 lost SD-VC-05 and kept BD-FL-35 x20",
+          "pass": true,
+          "detail": "{\"BD-FL-35\":20}"
+        }
+      ],
+      "metrics": {
+        "runs": 1,
+        "model_turns": 8,
+        "input_tokens": 4657,
+        "output_tokens": 253,
+        "mcp_calls": 10,
+        "distru_writes": 1,
+        "graph_node_spans": 16,
+        "mcp_call_spans": 10,
+        "duration_ms": 500
+      }
+    },
+    {
+      "id": "S15-careful-edit",
+      "title": "Same change as S06 from a model that keeps the other line by id: no deletion, applied once",
+      "pass": true,
+      "checks": [
+        {
+          "name": "status is AWAITING_APPROVAL",
+          "pass": true,
+          "detail": "got AWAITING_APPROVAL"
+        },
+        {
+          "name": "held: nothing written before approval",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "name": "plan has 2 line(s), none deleted",
+          "pass": true,
+          "detail": "UPDATE SO-1003 for Harborview Wellness [SYNTHETIC]\n  ~ CHANGE  BD-FL-35 \"Blue Dream 3.5g Flower\" x25 @ 25.00 (quantity 20 -> 25)\n  = KEEP    SD-VC-05 \"Sour Diesel 0.5g Vape Cartridge\" x4 @ 22.00"
+        },
+        {
+          "name": "status is APPLIED",
+          "pass": true,
+          "detail": "got APPLIED"
+        },
+        {
+          "name": "exactly one write after approval",
+          "pass": true,
+          "detail": "1 write(s)"
+        },
+        {
+          "name": "order PDF link fetched",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "name": "SO-1003 is BD-FL-35 x25 and SD-VC-05 x4",
+          "pass": true,
+          "detail": "{\"BD-FL-35\":25,\"SD-VC-05\":4}"
+        }
+      ],
+      "metrics": {
+        "runs": 1,
+        "model_turns": 8,
+        "input_tokens": 4551,
+        "output_tokens": 266,
+        "mcp_calls": 12,
+        "distru_writes": 1,
+        "graph_node_spans": 13,
+        "mcp_call_spans": 12,
+        "duration_ms": 403
       }
     }
   ]
