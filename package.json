@@ -16,6 +16,9 @@
     "db:up": "docker compose up -d --wait postgres",
     "db:down": "docker compose stop postgres",
     "db:migrate": "pnpm --filter @opsharness/db run migrate",
+    "mock": "node packages/distru-mock/dist/bin.js",
+    "opsharness": "node apps/harness/dist/cli.js",
+    "console": "pnpm --filter @opsharness/web start",
     "dev": "turbo run dev"
   },
   "devDependencies": {
