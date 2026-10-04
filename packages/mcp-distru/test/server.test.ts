@@ -42,6 +42,7 @@ describe('per-principal tool listing', () => {
       'get_customer_pricing',
       'get_inventory',
       'get_order',
+      'get_order_pdf',
       'get_plan',
       'list_orders',
       'propose_order_change',
@@ -49,9 +50,9 @@ describe('per-principal tool listing', () => {
       'search_products',
     ])
     const ro = await connect('agent-readonly@tenant-a', conn, plans)
-    expect(await toolNames(ro.client)).toEqual(['get_order', 'list_orders', 'search_products'])
+    expect(await toolNames(ro.client)).toEqual(['get_order', 'get_order_pdf', 'list_orders', 'search_products'])
     const applier = await connect('svc-applier@tenant-a', conn, plans)
-    expect(await toolNames(applier.client)).toEqual(['apply_plan', 'get_order', 'list_orders'])
+    expect(await toolNames(applier.client)).toEqual(['apply_plan', 'get_order', 'get_order_pdf', 'list_orders'])
   })
 
   it('a principal with no Distru grants gets an empty list, not a protocol error', async () => {
@@ -121,6 +122,20 @@ describe('reads', () => {
     const price = await erp.call('get_customer_pricing', { company_id: a.keys['company:harborview'], product_ids: [a.keys['product:bd-flower'], a.keys['product:sd-vape']] })
     const floors = Object.fromEntries((price.data['prices'] as { sku: string; floor_price: number }[]).map((p) => [p.sku, p.floor_price]))
     expect(floors).toEqual({ 'BD-FL-35': 23, 'SD-VC-05': 22 })
+  })
+
+  it('order PDF: a 429 is waited out for Retry-After, then retried', async () => {
+    let clock = NOW
+    const sleeps: number[] = []
+    const conn = mockConnection({ now: () => clock, sleep: async (ms) => void (sleeps.push(ms), (clock += ms)) })
+    const a = conn.mock!.tenants.get(TENANT_A)!
+    a.pdfDownloads = Array.from({ length: 20 }, () => clock - 1_000)
+    const ro = await connect('agent-readonly@tenant-a', conn, new InMemoryPlanStore())
+    const r = await ro.call('get_order_pdf', { order_id: a.keys['order:so-3'] })
+    expect(r.isError).toBe(false)
+    expect(String(r.data['pdf_url'])).toContain('.pdf')
+    expect(sleeps).toEqual([59_000])
+    expect(conn.mock!.requests.filter((q) => q.path.endsWith('/pdf')).map((q) => q.status)).toEqual([429, 200])
   })
 })
 

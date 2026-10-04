@@ -121,7 +121,12 @@ const tracer = () => trace.getTracer('opsharness')
  * Runs `fn` inside an active span. The run id (if any) is attached to every span so a trace
  * can be joined to the runs and tool_calls tables.
  */
-export async function withSpan<T>(name: string, attributes: Attributes, fn: (span: Span) => Promise<T>): Promise<T> {
+export interface SpanOptions {
+  /** Exceptions used for control flow (e.g. a graph interrupt): recorded as an event, not an error. */
+  expected?: (error: unknown) => boolean
+}
+
+export async function withSpan<T>(name: string, attributes: Attributes, fn: (span: Span) => Promise<T>, opts: SpanOptions = {}): Promise<T> {
   const run = currentRun()
   const attrs: Attributes = { ...attributes, ...(run ? { 'opsharness.run_id': run.runId } : {}), ...(run?.tenantId ? { 'opsharness.tenant_id': run.tenantId } : {}) }
   return tracer().startActiveSpan(name, { attributes: attrs }, async (span) => {
@@ -130,6 +135,11 @@ export async function withSpan<T>(name: string, attributes: Attributes, fn: (spa
       span.setStatus({ code: SpanStatusCode.OK })
       return out
     } catch (error) {
+      if (opts.expected?.(error)) {
+        span.addEvent('control_flow', { 'exception.type': (error as Error).name ?? 'unknown' })
+        span.setStatus({ code: SpanStatusCode.OK })
+        throw error
+      }
       span.recordException(error as Error)
       span.setStatus({ code: SpanStatusCode.ERROR, message: (error as Error).message })
       throw error

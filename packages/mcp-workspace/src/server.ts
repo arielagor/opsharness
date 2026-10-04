@@ -10,6 +10,8 @@ export interface WorkspaceServerOptions {
   /** Root of the per-tenant fixtures; defaults to this package's SYNTHETIC fixtures. */
   root?: string
   onToolCall?: ToolCallListener
+  /** The harness run this server instance serves. Defaults to the ambient run context. */
+  runId?: string | null
 }
 
 class NotFound extends Error {}
@@ -65,7 +67,7 @@ export function buildWorkspaceMcpServer(opts: WorkspaceServerOptions): McpServer
           tool: name,
           principalId: principal.id,
           tenantId: principal.tenantId,
-          runId: currentRun()?.runId ?? null,
+          runId: opts.runId !== undefined ? opts.runId : (currentRun()?.runId ?? null),
           args,
           ok,
           ...(error ? { error } : {}),

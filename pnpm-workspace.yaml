@@ -9,3 +9,6 @@ allowBuilds:
   esbuild: true
   sharp: false
   'unrs-resolver': false
+minimumReleaseAgeExclude:
+  - '@langchain/langgraph-sdk@1.12.1'
+  - '@langchain/langgraph@1.4.19'

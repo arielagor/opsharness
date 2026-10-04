@@ -21,7 +21,7 @@ describe('stdio transport', () => {
     await client.connect(transport)
     try {
       const tools = (await client.listTools()).tools.map((t) => t.name).sort()
-      expect(tools).toEqual(['get_order', 'list_orders', 'search_products'])
+      expect(tools).toEqual(['get_order', 'get_order_pdf', 'list_orders', 'search_products'])
       const r = await client.callTool({ name: 'search_products', arguments: { query: 'SD-VC' } })
       expect(JSON.stringify(r.structuredContent)).toContain('SD-VC-05')
     } finally {
@@ -54,7 +54,7 @@ describe('streamable HTTP transport', () => {
       const applier = await connectAs(http.url, 'svc-applier@tenant-a')
       expect((await erp.client.listTools()).tools.map((t) => t.name)).toContain('propose_order_change')
       expect((await erp.client.listTools()).tools.map((t) => t.name)).not.toContain('apply_plan')
-      expect((await applier.client.listTools()).tools.map((t) => t.name).sort()).toEqual(['apply_plan', 'get_order', 'list_orders'])
+      expect((await applier.client.listTools()).tools.map((t) => t.name).sort()).toEqual(['apply_plan', 'get_order', 'get_order_pdf', 'list_orders'])
       await erp.client.close()
       await applier.client.close()
     } finally {

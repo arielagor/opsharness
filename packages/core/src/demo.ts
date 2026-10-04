@@ -15,9 +15,12 @@ export const DEMO_PRINCIPALS: readonly Principal[] = [
   definePrincipal({ id: 'agent-readonly@tenant-a', tenantId: DEMO_TENANT_A, kind: 'agent', displayName: 'Read-only agent', scopes: ['products:read', 'orders:read'] }),
   definePrincipal({ id: 'human-approver@tenant-a', tenantId: DEMO_TENANT_A, kind: 'human', displayName: 'Dana Ops (synthetic approver)', scopes: [...READS, 'orders:approve'] }),
   definePrincipal({ id: 'svc-applier@tenant-a', tenantId: DEMO_TENANT_A, kind: 'service', displayName: 'Plan applier', scopes: ['orders:read', 'orders:apply'] }),
+  definePrincipal({ id: 'svc-verifier@tenant-a', tenantId: DEMO_TENANT_A, kind: 'service', displayName: 'Deterministic verifier', scopes: [...READS] }),
   definePrincipal({ id: 'agent-erp@tenant-b', tenantId: DEMO_TENANT_B, kind: 'agent', displayName: 'ERP agent (tenant B)', scopes: [...READS, 'orders:propose'] }),
   definePrincipal({ id: 'human-approver@tenant-b', tenantId: DEMO_TENANT_B, kind: 'human', displayName: 'Lee Ops (synthetic approver)', scopes: [...READS, 'orders:approve'] }),
   definePrincipal({ id: 'svc-applier@tenant-b', tenantId: DEMO_TENANT_B, kind: 'service', displayName: 'Plan applier (tenant B)', scopes: ['orders:read', 'orders:apply'] }),
+  definePrincipal({ id: 'svc-verifier@tenant-b', tenantId: DEMO_TENANT_B, kind: 'service', displayName: 'Deterministic verifier (tenant B)', scopes: [...READS] }),
+  definePrincipal({ id: 'agent-intake@tenant-b', tenantId: DEMO_TENANT_B, kind: 'agent', displayName: 'Intake agent (tenant B)', scopes: ['mail:read', 'sheets:read', 'products:read'] }),
 ]
 
 export function demoPrincipal(id: string): Principal {

@@ -16,6 +16,8 @@ export interface DistruServerOptions {
   plans: PlanStore
   now?: () => Date
   onToolCall?: ToolCallListener
+  /** The harness run this server instance serves. Defaults to the ambient run context. */
+  runId?: string | null
 }
 
 const ORDER_STATUSES = ['PENDING', 'PROCESSING', 'READY_TO_SHIP', 'DELIVERING', 'DELIVERED', 'COMPLETED', 'CANCELED'] as const
@@ -88,6 +90,7 @@ export function tierUnitPrice(tier: PriceTier, unitPrice: number): number {
 export function buildDistruMcpServer(opts: DistruServerOptions): McpServer {
   const { principal, client, plans } = opts
   const now = opts.now ?? (() => new Date())
+  const runIdNow = () => (opts.runId !== undefined ? opts.runId : (currentRun()?.runId ?? null))
   const server = new McpServer({ name: 'opsharness-distru', version: '0.1.0' }, { capabilities: { tools: {} } })
 
   function tool<S extends z.ZodRawShape>(
@@ -134,7 +137,7 @@ export function buildDistruMcpServer(opts: DistruServerOptions): McpServer {
           tool: name,
           principalId: principal.id,
           tenantId: principal.tenantId,
-          runId: currentRun()?.runId ?? null,
+          runId: runIdNow(),
           args,
           ok,
           ...(error ? { error } : {}),
@@ -230,6 +233,20 @@ export function buildDistruMcpServer(opts: DistruServerOptions): McpServer {
     'orders:read',
     { description: 'One order with its lines (line_id is needed to keep or change a line in a proposal).', input: { order_id: z.string().min(1) }, readOnly: true },
     async ({ order_id }) => ({ order: orderView(await client.getOrder(order_id)) }),
+  )
+
+  tool(
+    'get_order_pdf',
+    'orders:read',
+    {
+      description: 'A download link for the order PDF. Distru rate-limits this endpoint (20/min, 1000/day); the client waits out Retry-After before retrying.',
+      input: { order_id: z.string().min(1) },
+      readOnly: true,
+    },
+    async ({ order_id }) => {
+      const pdf = await client.orderPdfUrl(order_id)
+      return { order_id, pdf_url: pdf.url ?? null }
+    },
   )
 
   tool(
@@ -369,7 +386,7 @@ export function buildDistruMcpServer(opts: DistruServerOptions): McpServer {
       idempotent: false,
     },
     async (input) => {
-      const plan = await proposeOrderChange(client, principal, input, { now, runId: currentRun()?.runId ?? null })
+      const plan = await proposeOrderChange(client, principal, input, { now, runId: runIdNow() })
       await plans.create(plan)
       return {
         plan_id: plan.id,
@@ -422,6 +439,7 @@ export const TOOL_SCOPES: Record<string, Scope> = {
   get_inventory: 'inventory:read',
   find_customer: 'companies:read',
   get_order: 'orders:read',
+  get_order_pdf: 'orders:read',
   list_orders: 'orders:read',
   get_customer_pricing: 'pricing:read',
   sales_history: 'reports:read',
