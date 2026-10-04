@@ -194,7 +194,7 @@ export const SCENARIOS: Scenario[] = [
   },
   {
     id: 'S10-resume-after-restart',
-    title: 'Process restarts while a run waits for approval: a new process resumes it from the Postgres checkpoint',
+    title: 'Restart while a run waits for approval: a fresh harness instance resumes it from the Postgres checkpoint',
     async run(ctx) {
       const before = writes(ctx)
       const r = await start(ctx, { kind: 'email', ref: '001-harborview-new-order' })
