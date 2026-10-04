@@ -1,0 +1,11 @@
+packages:
+  - apps/*
+  - packages/*
+  - evals
+# pnpm 12 runs no dependency install scripts unless listed here.
+allowBuilds:
+  '@prisma/engines': true
+  prisma: true
+  esbuild: true
+  sharp: false
+  'unrs-resolver': false

@@ -1,0 +1,15 @@
+node_modules/
+.turbo/
+dist/
+coverage/
+.next/
+next-env.d.ts
+*.tsbuildinfo
+.env
+.env.local
+!.env.example
+.otel/
+evals/results/*.local.json
+npm-debug.log*
+pnpm-debug.log*
+.DS_Store

@@ -1,0 +1,17 @@
+# Local Postgres for the harness (Prisma tables + LangGraph checkpoints) and the test suites.
+# Host port 5547 so it never collides with a default Postgres (5432) or other local ones (5433, 5545).
+services:
+  postgres:
+    image: postgres:16
+    container_name: opsharness-pg
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: opsharness
+    ports:
+      - "5547:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 2s
+      timeout: 2s
+      retries: 20

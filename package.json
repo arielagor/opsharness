@@ -1,0 +1,25 @@
+{
+  "name": "opsharness",
+  "private": true,
+  "description": "Work sample: a multi-agent operations harness with MCP servers, built against Distru's published API contract using a mock and synthetic data. Unofficial; not affiliated with or endorsed by Distru.",
+  "packageManager": "pnpm@12.9.1",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "evals": "pnpm --filter @opsharness/evals run evals",
+    "evals:live": "pnpm --filter @opsharness/evals run evals:live",
+    "db:up": "docker compose up -d --wait postgres",
+    "db:down": "docker compose stop postgres",
+    "db:migrate": "pnpm --filter @opsharness/db run migrate",
+    "dev": "turbo run dev"
+  },
+  "devDependencies": {
+    "turbo": "^2.11.7",
+    "typescript": "~5.8.3"
+  }
+}

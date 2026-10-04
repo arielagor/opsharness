@@ -1,0 +1,32 @@
+{
+  "name": "@opsharness/distru-contract",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Distru's published OpenAPI 3.0 spec (verbatim), a documented nullability patch, and TypeScript types generated from it.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": ["dist", "openapi.json"],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "gen": "tsc src/patch.ts --outDir dist --module nodenext --moduleResolution nodenext --target es2022 --declaration --skipLibCheck && node scripts/generate.mjs",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint . --max-warnings 0",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.26.0",
+    "@types/node": "^22.15.0",
+    "eslint": "^9.26.0",
+    "openapi-typescript": "^7.13.0",
+    "typescript": "~5.8.3",
+    "typescript-eslint": "^8.32.0",
+    "vitest": "^5.0.3"
+  }
+}
