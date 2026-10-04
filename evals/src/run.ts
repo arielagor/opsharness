@@ -75,7 +75,8 @@ async function runScenario(s: Scenario, choice: ModelChoice): Promise<ScenarioRe
   try {
     checks = await s.run(ctx)
   } catch (e) {
-    error = (e as Error).stack ?? String(e)
+    // First line only: stack traces carry local paths and are in the trace file anyway.
+    error = `${(e as Error).name}: ${(e as Error).message}`.split('\n')[0]!
   }
   const duration_ms = Math.round(performance.now() - t0)
   const metrics = { runs: ctx.runIds.length, model_turns: 0, input_tokens: 0, output_tokens: 0, mcp_calls: 0, distru_writes: tenant.writes.length, graph_node_spans: 0, mcp_call_spans: 0, duration_ms }
@@ -110,13 +111,22 @@ async function main(): Promise<number> {
   const results: ScenarioResult[] = []
   const started = new Date().toISOString()
 
+  let stopReason: string | undefined
   for (const s of scenarios) {
-    if (values.live && cliUsage.costUsd >= budget) {
-      results.push({ id: s.id, title: s.title, pass: false, skipped: `budget of $${budget} reached`, checks: [], metrics: { runs: 0, model_turns: 0, input_tokens: 0, output_tokens: 0, mcp_calls: 0, distru_writes: 0, graph_node_spans: 0, mcp_call_spans: 0, duration_ms: 0 } })
-      out(`SKIP ${s.id} (budget reached)`)
+    if (values.live && cliUsage.costUsd >= budget) stopReason ??= `budget of $${budget} reached`
+    if (stopReason) {
+      results.push({ id: s.id, title: s.title, pass: false, skipped: stopReason, checks: [], metrics: { runs: 0, model_turns: 0, input_tokens: 0, output_tokens: 0, mcp_calls: 0, distru_writes: 0, graph_node_spans: 0, mcp_call_spans: 0, duration_ms: 0 } })
+      out(`SKIP ${s.id} (${stopReason})`)
       continue
     }
     const r = await runScenario(s, choice ?? scriptedModels(s.scripted))
+    // A model provider that refuses before answering (quota, rate wall) is "not run", not a model failure.
+    if (values.live && r.error && /Quota/.test(r.error) && r.metrics.model_turns === 0) {
+      stopReason = `not run: the model provider refused before any model turn (${r.error})`
+      results.push({ ...r, pass: false, skipped: stopReason })
+      out(`SKIP ${s.id} (${stopReason})`)
+      continue
+    }
     results.push(r)
     out(`${r.pass ? 'PASS' : 'FAIL'} ${r.id}  (${r.metrics.duration_ms} ms, ${r.metrics.model_turns} model turns, ${r.metrics.mcp_calls} MCP calls, ${r.metrics.distru_writes} writes)`)
     for (const c of r.checks) if (!c.pass) out(`     x ${c.name}${c.scriptedOnly && values.live ? ' [scripted-only, not scored]' : ''}: ${c.detail}`)
@@ -140,12 +150,14 @@ async function main(): Promise<number> {
     tokens: { input: results.reduce((n, r) => n + r.metrics.input_tokens, 0), output: results.reduce((n, r) => n + r.metrics.output_tokens, 0) },
     cost_usd: values.live && choice?.transport === 'claude-cli' ? Math.round(cliUsage.costUsd * 10_000) / 10_000 : null,
     served_models: values.live ? [...cliUsage.models] : [],
+    stopped_early: stopReason ?? null,
     results,
   }
   const file = values.out ?? join(HERE, '..', 'results', values.live ? `live-${started.slice(0, 10)}.json` : 'deterministic.json')
   mkdirSync(dirname(file), { recursive: true })
   writeFileSync(file, `${JSON.stringify(summary, null, 2)}\n`)
-  out(`${summary.mode}: ${passed}/${results.length} scenarios passed, ${summary.checks.passed}/${summary.checks.total} checks (${summary.model}${summary.cost_usd !== null ? `, $${summary.cost_usd}` : ''}) -> ${relative(process.cwd(), file)}`)
+  if (stopReason) out(`stopped early: ${stopReason}`)
+  out(`${summary.mode}: ${passed}/${results.length} scenarios passed (${ran} ran), ${summary.checks.passed}/${summary.checks.total} checks (${summary.model}${summary.cost_usd !== null ? `, $${summary.cost_usd}` : ''}) -> ${relative(process.cwd(), file)}`)
   return values.live || passed === results.length ? 0 : 1
 }
 
