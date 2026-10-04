@@ -1,0 +1,174 @@
+// opsharness control-plane schema. All data in it is SYNTHETIC demo data.
+// Every row that belongs to a customer account carries tenant_id; every query filters on it.
+
+generator client {
+  provider            = "prisma-client"
+  output              = "../src/generated/prisma"
+  moduleFormat        = "esm"
+  importFileExtension = "js"
+  runtime             = "nodejs"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Tenant {
+  id         String      @id
+  name       String
+  createdAt  DateTime    @default(now()) @map("created_at")
+  principals Principal[]
+  runs       Run[]
+  plans      Plan[]
+
+  @@map("tenants")
+}
+
+enum PrincipalKind {
+  agent
+  human
+  service
+}
+
+/// An identity that can call tools: an agent, a human approver, or a service.
+model Principal {
+  id          String        @id
+  tenantId    String        @map("tenant_id")
+  kind        PrincipalKind
+  displayName String        @map("display_name")
+  createdAt   DateTime      @default(now()) @map("created_at")
+  tenant      Tenant        @relation(fields: [tenantId], references: [id])
+  grants      Grant[]
+
+  @@index([tenantId])
+  @@map("principals")
+}
+
+/// One scope granted to one principal. A tool whose scope is not granted is not listed.
+model Grant {
+  principalId String    @map("principal_id")
+  scope       String
+  grantedAt   DateTime  @default(now()) @map("granted_at")
+  principal   Principal @relation(fields: [principalId], references: [id], onDelete: Cascade)
+
+  @@id([principalId, scope])
+  @@map("grants")
+}
+
+enum RunStatus {
+  RUNNING
+  AWAITING_APPROVAL
+  APPLIED
+  REJECTED
+  BLOCKED
+  NEEDS_CLARIFICATION
+  FAILED
+}
+
+/// One harness run: one inbound email or sheet taken through the graph. thread_id keys the
+/// LangGraph checkpoint, which lives in the checkpointer's own tables.
+model Run {
+  id          String     @id
+  tenantId    String     @map("tenant_id")
+  sourceKind  String     @map("source_kind")
+  sourceRef   String     @map("source_ref")
+  status      RunStatus
+  mode        String
+  model       String?
+  threadId    String     @unique @map("thread_id")
+  outcome     Json?
+  summary     String?
+  createdAt   DateTime   @default(now()) @map("created_at")
+  updatedAt   DateTime   @updatedAt @map("updated_at")
+  tenant      Tenant     @relation(fields: [tenantId], references: [id])
+  toolCalls   ToolCall[]
+  plans       Plan[]
+
+  @@index([tenantId, createdAt])
+  @@map("runs")
+}
+
+/// The audit trail. One row per MCP tool call, per model turn (server = "model"), and per human
+/// decision (server = "human"). Rows are append-only.
+model ToolCall {
+  id           String   @id @default(uuid())
+  runId        String?  @map("run_id")
+  tenantId     String   @map("tenant_id")
+  principalId  String   @map("principal_id")
+  server       String
+  tool         String
+  node         String?
+  args         Json
+  ok           Boolean
+  error        String?
+  result       Json?
+  latencyMs    Float    @map("latency_ms")
+  /// For server = "model": this turn's usage. For an MCP call: the usage of the model turn that
+  /// requested it (model_turn_id), so sum tokens over model rows only.
+  inputTokens  Int?     @map("input_tokens")
+  outputTokens Int?     @map("output_tokens")
+  modelTurnId  String?  @map("model_turn_id")
+  traceId      String?  @map("trace_id")
+  startedAt    DateTime @map("started_at")
+  run          Run?     @relation(fields: [runId], references: [id])
+
+  @@index([runId, startedAt])
+  @@index([tenantId, startedAt])
+  @@map("tool_calls")
+}
+
+enum PlanStatus {
+  PROPOSED
+  APPROVED
+  REJECTED
+  APPLYING
+  APPLIED
+  FAILED
+}
+
+model Plan {
+  id                  String     @id
+  tenantId            String     @map("tenant_id")
+  runId               String?    @map("run_id")
+  proposedBy          String     @map("proposed_by")
+  orderId             String?    @map("order_id")
+  baseUpdatedDatetime String?    @map("base_updated_datetime")
+  request             Json
+  diff                Json
+  destructive         Boolean
+  rationale           String
+  hash                String
+  status              PlanStatus
+  result              Json?
+  error               String?
+  createdAt           DateTime   @map("created_at")
+  updatedAt           DateTime   @updatedAt @map("updated_at")
+  tenant              Tenant     @relation(fields: [tenantId], references: [id])
+  run                 Run?       @relation(fields: [runId], references: [id])
+  approval            Approval?
+
+  @@index([tenantId, status])
+  @@map("plans")
+}
+
+enum Decision {
+  APPROVED
+  REJECTED
+}
+
+/// A human decision on a plan. At most one per plan; written in the same transaction as its
+/// tool_calls audit row and the plan's status change.
+model Approval {
+  id                     String   @id
+  planId                 String   @unique @map("plan_id")
+  tenantId               String   @map("tenant_id")
+  decision               Decision
+  approverId             String   @map("approver_id")
+  planHash               String   @map("plan_hash")
+  acknowledgeDestructive Boolean  @map("acknowledge_destructive")
+  note                   String?
+  decidedAt              DateTime @map("decided_at")
+  plan                   Plan     @relation(fields: [planId], references: [id])
+
+  @@map("approvals")
+}

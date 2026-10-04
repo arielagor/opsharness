@@ -1,0 +1,42 @@
+{
+  "name": "@opsharness/db",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Prisma schema and stores for opsharness: tenants, principals, grants, runs, tool_calls (audit), plans, approvals.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": ["dist", "prisma"],
+  "scripts": {
+    "generate": "prisma generate",
+    "build": "prisma generate && tsc -p tsconfig.build.json",
+    "typecheck": "prisma generate && tsc --noEmit",
+    "lint": "eslint . --max-warnings 0",
+    "migrate": "prisma migrate deploy && node dist/seed.js",
+    "migrate:dev": "prisma migrate dev",
+    "test": "prisma generate && tsc -p tsconfig.build.json && prisma migrate deploy && vitest run"
+  },
+  "dependencies": {
+    "@opsharness/core": "workspace:*",
+    "@opsharness/distru-contract": "workspace:*",
+    "@opsharness/mcp-distru": "workspace:*",
+    "@prisma/adapter-pg": "7.10.0",
+    "@prisma/client": "7.10.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.26.0",
+    "@opsharness/distru-mock": "workspace:*",
+    "@types/node": "^22.15.0",
+    "eslint": "^9.26.0",
+    "prisma": "7.10.0",
+    "typescript": "~5.8.3",
+    "typescript-eslint": "^8.32.0",
+    "vitest": "^5.0.3"
+  }
+}

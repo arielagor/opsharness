@@ -9,6 +9,7 @@ next-env.d.ts
 .env.local
 !.env.example
 .otel/
+packages/db/src/generated/
 evals/results/*.local.json
 npm-debug.log*
 pnpm-debug.log*
