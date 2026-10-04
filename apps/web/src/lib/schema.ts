@@ -208,6 +208,10 @@ export const schema = createSchema<GqlContext>({
     Mutation: {
       decide: async (_: unknown, a: { planId: string; planHash: string; decision: 'APPROVED' | 'REJECTED'; acknowledgeDestructive: boolean; note?: string | null }, ctx: GqlContext) => {
         need(ctx, 'orders:approve')
+        // Only a plan the graph is holding at the approval gate can be decided. A blocked run's plan
+        // stays PROPOSED but is not in the inbox; posting its id directly must not approve it.
+        const held = await ctx.db.plan.findFirst({ where: { id: a.planId, tenantId: ctx.viewer.tenantId }, select: { run: { select: { status: true } } } })
+        if (held?.run && held.run.status !== 'AWAITING_APPROVAL') return { ok: false, error: `This plan is not waiting for approval (its run is ${held.run.status}).`, planId: a.planId, decision: null }
         try {
           const r = await ctx.plans.recordDecision(ctx.viewer.tenantId, {
             planId: a.planId,

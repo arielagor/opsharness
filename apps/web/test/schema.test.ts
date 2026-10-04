@@ -73,6 +73,19 @@ describe('console GraphQL schema', () => {
     expect(audit).toHaveLength(1)
   })
 
+  it("refuses a decision on a blocked run's plan posted by id", async () => {
+    const runB = `run_web_${randomUUID()}`
+    const planB = `plan_web_${randomUUID()}`
+    await runs.createRun({ id: runB, tenantId: 'tenant-a', sourceKind: 'email', sourceRef: '005-harborview-change-quantity', mode: 'scripted', model: 'scripted' })
+    await runs.updateRun('tenant-a', runB, { status: 'BLOCKED', summary: 'Blocked', outcome: { trail: [] } })
+    await db.plan.create({
+      data: { id: planB, tenantId: 'tenant-a', runId: runB, proposedBy: 'agent-erp@tenant-a', orderId: 'o1', baseUpdatedDatetime: null, request: {}, diff, destructive: true, rationale: 'test', hash: 'h2', status: 'PROPOSED', createdAt: new Date() },
+    })
+    const d = (await run('human-approver@tenant-a', `mutation { decide(planId: "${planB}", planHash: "h2", decision: APPROVED, acknowledgeDestructive: true) { ok error } }`))['decide'] as { ok: boolean; error: string }
+    expect(d).toMatchObject({ ok: false, error: expect.stringMatching(/BLOCKED/) })
+    expect(await db.approval.count({ where: { planId: planB } })).toBe(0)
+  })
+
   it('a principal without orders:approve cannot decide', async () => {
     await expect(run('agent-readonly@tenant-a', `mutation { decide(planId: "${planA}", planHash: "h1", decision: REJECTED, acknowledgeDestructive: false) { ok } }`)).rejects.toThrow(/orders:approve/)
   })
