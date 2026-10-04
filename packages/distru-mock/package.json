@@ -1,0 +1,40 @@
+{
+  "name": "@opsharness/distru-mock",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Spec-faithful mock of a subset of Distru's public API with SYNTHETIC data (a fictional cannabis distributor). Requests and responses validated against Distru's published OpenAPI spec.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "bin": {
+    "distru-mock": "./dist/bin.js"
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "dev": "node dist/bin.js",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint . --max-warnings 0",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@opsharness/distru-contract": "workspace:*",
+    "ajv": "^8.20.0",
+    "ajv-formats": "^3.0.1"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.26.0",
+    "@opsharness/distru-client": "workspace:*",
+    "@types/node": "^22.15.0",
+    "eslint": "^9.26.0",
+    "typescript": "~5.8.3",
+    "typescript-eslint": "^8.32.0",
+    "vitest": "^5.0.3"
+  }
+}

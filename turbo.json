@@ -1,5 +1,6 @@
 {
   "$schema": "https://turbo.build/schema.json",
+  "agentGuidance": false,
   "globalEnv": ["NODE_ENV", "DATABASE_URL", "OPSHARNESS_MODEL", "OPSHARNESS_TRACE_FILE"],
   "tasks": {
     "build": {
