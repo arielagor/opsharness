@@ -39,6 +39,8 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: 22
+          # v5 would auto-cache for the packageManager field before pnpm is installed.
+          package-manager-cache: false
       - name: Install pnpm (version from package.json packageManager)
         run: npm install -g pnpm@12.9.1
       - name: Install
