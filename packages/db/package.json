@@ -15,12 +15,12 @@
   "files": ["dist", "prisma"],
   "scripts": {
     "generate": "prisma generate",
-    "build": "prisma generate && tsc -p tsconfig.build.json",
-    "typecheck": "prisma generate && tsc --noEmit",
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
     "lint": "eslint . --max-warnings 0",
     "migrate": "prisma migrate deploy && node dist/seed.js",
     "migrate:dev": "prisma migrate dev",
-    "test": "prisma generate && tsc -p tsconfig.build.json && prisma migrate deploy && vitest run"
+    "test": "prisma migrate deploy && vitest run"
   },
   "dependencies": {
     "@opsharness/core": "workspace:*",
