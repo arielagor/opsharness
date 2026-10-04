@@ -77,6 +77,14 @@ export async function verify(input: { draft: OrderDraft; plan: Plan; toolbox: To
     check('licence', ok, ok ? `${c!.name}: licence valid today.` : `${c?.name ?? companyId} cannot receive orders: no active, unexpired licence. On file: ${lic}.`)
   }
 
+  // 1b. The customer the source names is the customer whose order the plan writes. An email from one
+  // buyer citing another buyer's order number must not edit that order.
+  const named = norm(draft.customer_name ?? '')
+  if (named && d.customer) {
+    const ok = norm(d.customer.name).includes(named)
+    check('customer_matches_source', ok, ok ? `Source and plan both concern ${d.customer.name}.` : `The source is from "${draft.customer_name}", but the plan writes ${d.kind === 'update' ? `order ${d.order_number}, which belongs to` : 'an order for'} ${d.customer.name}.`)
+  }
+
   // 2. One product per source line, and the plan matches the source.
   const matched = new Set<string>()
   for (const line of draft.lines) {

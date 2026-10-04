@@ -29,7 +29,7 @@ describe('workspace fixtures', () => {
   it('every tenant-a fixture email parses and is labelled synthetic', async () => {
     const ws = new TenantWorkspace('tenant-a')
     const list = await ws.listEmails()
-    expect(list.length).toBe(8)
+    expect(list.length).toBe(9)
     for (const m of list) expect((await ws.readEmail(m.message_id))!.body).toContain('[SYNTHETIC FIXTURE')
   })
 })

@@ -242,6 +242,15 @@ export const SCENARIOS: Scenario[] = [
       return [isStatus(r, 'BLOCKED', 'NEEDS_CLARIFICATION'), noWrites(ctx, before), check('never reached approval', r.status !== 'AWAITING_APPROVAL'), blockerMentions(r, /floor|below/i, 'the price floor')]
     },
   },
+  {
+    id: 'S13-other-customers-order',
+    title: 'A buyer cites an order number that belongs to a different customer of the same distributor: blocked',
+    async run(ctx) {
+      const before = writes(ctx)
+      const r = await start(ctx, { kind: 'email', ref: '009-juniper-wrong-order' })
+      return [isStatus(r, 'BLOCKED', 'NEEDS_CLARIFICATION'), noWrites(ctx, before), check('never reached approval', r.status !== 'AWAITING_APPROVAL'), blockerMentions(r, /belongs to/i, 'the customer mismatch')]
+    },
+  },
 ]
 
 /** The mock clock shared by a scenario's mock and client; sleeps advance it. */

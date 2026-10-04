@@ -2,10 +2,10 @@ import { pathToFileURL } from 'node:url'
 import { DEMO_PRINCIPALS, DEMO_TENANT_A, DEMO_TENANT_B, type Principal } from '@opsharness/core'
 import { createDb, type Db } from './client.js'
 
-/** SYNTHETIC tenants. Names are invented and do not refer to any real business. */
+/** SYNTHETIC tenants, named as in the Distru mock. Names are invented and refer to no real business. */
 export const DEMO_TENANTS = [
-  { id: DEMO_TENANT_A, name: 'Fernhollow Distribution (synthetic)' },
-  { id: DEMO_TENANT_B, name: 'Saltmarsh Wholesale (synthetic)' },
+  { id: DEMO_TENANT_A, name: 'Larkspur & Vine Distribution [SYNTHETIC]' },
+  { id: DEMO_TENANT_B, name: 'Quillback Supply Co. [SYNTHETIC]' },
 ]
 
 /** Idempotent: upserts tenants and principals and makes each principal's grants match exactly. */

@@ -6,6 +6,7 @@ import { initTelemetry, log } from '@opsharness/telemetry'
 import { Harness } from './harness.js'
 import { anthropicModels, scriptedModels, type ModelChoice } from './models.js'
 import { claudeCliModels } from './claude-cli.js'
+import type { Source } from './types.js'
 
 const USAGE = `opsharness <command> [options]   (SYNTHETIC data; Distru mock unless DISTRU_BASE_URL is set)
 
@@ -14,9 +15,19 @@ const USAGE = `opsharness <command> [options]   (SYNTHETIC data; Distru mock unl
                                          run one source until it finishes or waits for approval
   resume --tenant T RUN_ID               continue a run whose plan has a recorded decision
   worker [--once] [--interval MS]        resume every run that has a recorded decision
+  demo                                   run six SYNTHETIC fixtures for tenant-a to fill the console
 
 Env: DATABASE_URL, OPSHARNESS_MODEL (live), ANTHROPIC_API_KEY or OPSHARNESS_LEAN_CLAUDE (live),
      OPSHARNESS_TRACE_FILE (default .otel/traces.jsonl), DISTRU_BASE_URL + DISTRU_TOKENS.`
+
+const DEMO_SOURCES: Source[] = [
+  { kind: 'email', ref: '001-harborview-new-order' },
+  { kind: 'email', ref: '005-harborview-change-quantity' },
+  { kind: 'sheet', ref: 'pelican-weekly-2026-10-01' },
+  { kind: 'email', ref: '003-pelican-over-inventory' },
+  { kind: 'email', ref: '006-juniper-prompt-injection' },
+  { kind: 'email', ref: '002-cinder-ambiguous' },
+]
 
 async function models(live: boolean): Promise<ModelChoice> {
   if (!live) return scriptedModels()
@@ -46,7 +57,7 @@ try {
     await seedPrincipals(db)
     await db.$disconnect()
     print({ seeded: true })
-  } else if (command === 'run' || command === 'resume' || command === 'worker') {
+  } else if (command === 'run' || command === 'resume' || command === 'worker' || command === 'demo') {
     const m = await models(values.live)
     const harness = await Harness.create({ connection: connectionFromEnv(), model: m.model, modelName: m.modelName, mode: m.mode })
     try {
@@ -54,6 +65,12 @@ try {
         if (!values.email && !values.sheet) throw new Error('run needs --email or --sheet')
         const r = await harness.start(values.tenant, values.email ? { kind: 'email', ref: values.email } : { kind: 'sheet', ref: values.sheet! })
         print({ run_id: r.runId, status: r.status, proposal: r.state.proposal, verdict: r.state.verdict, clarification: r.state.clarification, trail: r.state.trail })
+      } else if (command === 'demo') {
+        if (!process.env['DISTRU_BASE_URL']) log.warn('DISTRU_BASE_URL is not set: this process uses its own in-process mock, so a worker in another process will apply to a different mock')
+        for (const source of DEMO_SOURCES) {
+          const r = await harness.start('tenant-a', source)
+          print({ source: source.ref, run_id: r.runId, status: r.status })
+        }
       } else if (command === 'resume') {
         if (!arg) throw new Error('resume needs a RUN_ID')
         const r = await harness.resume(values.tenant, arg)
