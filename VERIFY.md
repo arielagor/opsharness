@@ -109,7 +109,16 @@ INF no leaks found
 exit 0
 ```
 
-That run covered every commit before the one that adds these docs; the final report and the CI `secrets` job cover the last commit. A `dir` scan of the working tree flags only Next.js's generated keys under `apps/web/.next/`, which is build output and gitignored:
+That run covered every commit before the one that added these docs. The docs commit (`2f0b0d2`) then tripped gitleaks's `curl-auth-header` rule: a curl example in section 6 put the mock's synthetic token (printed by `pnpm mock`, valid only against the mock) in a header. The example now reads it from a variable, and `.gitleaksignore` records that single fingerprint as a false positive. With it, the full history scans clean:
+
+```
+$ docker run --rm -v "$PWD:/repo" ghcr.io/gitleaks/gitleaks:v8.30.1 git /repo --redact --no-banner
+INF 14 commits scanned.
+INF no leaks found
+exit 0
+```
+
+The CI `secrets` job runs the same scan on every push. A `dir` scan of the working tree flags only Next.js's generated keys under `apps/web/.next/`, which is build output and gitignored:
 
 ```
 $ git ls-files | grep -cE '(^|/)\.next/|(^|/)\.env$|\.otel/'
@@ -245,7 +254,8 @@ Apply, then confirm the write and that a second pass does nothing:
 $ pnpm opsharness worker --once
 { "run_id": "run_5b7b2cd7-e20d-4642-aad4-b38a0b7bbcee", "status": "APPLIED" }
 $ pnpm opsharness worker --once
-$ curl -s -H 'Authorization: Bearer mock-token-tenant-a-full' http://localhost:4010/public/v1/orders \
+$ MOCK_TOKEN=mock-token-tenant-a-full    # the mock's synthetic token, printed by pnpm mock at startup
+$ curl -s -H "Authorization: Bearer $MOCK_TOKEN" http://localhost:4010/public/v1/orders \
   | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const o=JSON.parse(s).data.find(x=>x.order_number==="SO-1003");console.log(JSON.stringify({order_number:o.order_number,items:o.items.map(i=>({product:i.product?.sku,quantity:i.quantity}))}))})'
 {"order_number":"SO-1003","items":[{"product":"BD-FL-35","quantity":"20.000000000"}]}
 ```

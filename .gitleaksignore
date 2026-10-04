@@ -1,0 +1,4 @@
+# False positive: the mock's synthetic token ("mock-token-tenant-a-full", printed by `pnpm mock`)
+# in a curl example in VERIFY.md. It authenticates only against packages/distru-mock.
+# The example was rewritten in the next commit; this entry covers the commit where it appeared.
+2f0b0d2f23b7bbc6be27aac7414fbd823cdf4f13:VERIFY.md:curl-auth-header:248
