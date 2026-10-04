@@ -1,0 +1,41 @@
+{
+  "name": "@opsharness/mcp-workspace",
+  "version": "0.1.0",
+  "private": true,
+  "description": "MCP server over a SYNTHETIC per-tenant workspace: a fixture .eml mailbox and CSV order sheets. All content is returned framed as untrusted data.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "bin": {
+    "mcp-workspace-stdio": "./dist/stdio.js"
+  },
+  "files": ["dist", "fixtures"],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint . --max-warnings 0",
+    "test": "tsc -p tsconfig.build.json && vitest run"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.32.0",
+    "@opsharness/core": "workspace:*",
+    "@opsharness/telemetry": "workspace:*",
+    "mailparser": "^3.9.0",
+    "zod": "4.6.5"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.26.0",
+    "@types/mailparser": "^3.4.6",
+    "@types/node": "^22.15.0",
+    "eslint": "^9.26.0",
+    "typescript": "~5.8.3",
+    "typescript-eslint": "^8.32.0",
+    "vitest": "^5.0.3"
+  }
+}

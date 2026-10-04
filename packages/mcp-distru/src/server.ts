@@ -410,6 +410,9 @@ export function buildDistruMcpServer(opts: DistruServerOptions): McpServer {
     },
   )
 
+  // The SDK installs tools/list only on the first registration; without this a principal granted
+  // no Distru tools gets JSON-RPC -32601 instead of an empty list.
+  server.registerTool('__init', { description: 'placeholder' }, () => ({ content: [] })).remove()
   return server
 }
 

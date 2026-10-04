@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { Client } from '@modelcontextprotocol/sdk/client/index.js'
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js'
-import { demoPrincipal, type ToolCallEvent } from '@opsharness/core'
+import { definePrincipal, demoPrincipal, type ToolCallEvent } from '@opsharness/core'
 import { TENANT_A, TENANT_B } from '@opsharness/distru-mock'
 import { buildDistruMcpServer, DecisionError, InMemoryPlanStore, mockConnection, type DistruConnection, type PlanStore } from '../src/index.js'
 
@@ -52,6 +52,16 @@ describe('per-principal tool listing', () => {
     expect(await toolNames(ro.client)).toEqual(['get_order', 'list_orders', 'search_products'])
     const applier = await connect('svc-applier@tenant-a', conn, plans)
     expect(await toolNames(applier.client)).toEqual(['apply_plan', 'get_order', 'list_orders'])
+  })
+
+  it('a principal with no Distru grants gets an empty list, not a protocol error', async () => {
+    const { conn, plans } = world()
+    const principal = definePrincipal({ id: 'agent-mailonly@tenant-a', tenantId: TENANT_A, kind: 'agent', displayName: 'mail only', scopes: ['mail:read'] })
+    const [clientSide, serverSide] = InMemoryTransport.createLinkedPair()
+    await buildDistruMcpServer({ principal, client: conn.clientFor(TENANT_A), plans }).connect(serverSide)
+    const client = new Client({ name: 'test', version: '0.0.0' })
+    await client.connect(clientSide)
+    expect((await client.listTools()).tools).toEqual([])
   })
 
   it('no agent principal is ever offered apply_plan', async () => {
