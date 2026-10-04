@@ -19,7 +19,13 @@
     },
     "evals": {
       "dependsOn": ["^build"],
-      "cache": false
+      "cache": false,
+      "passThroughEnv": ["OPSHARNESS_LOG_LEVEL"]
+    },
+    "evals:live": {
+      "dependsOn": ["^build"],
+      "cache": false,
+      "passThroughEnv": ["OPSHARNESS_LOG_LEVEL", "ANTHROPIC_API_KEY", "OPSHARNESS_LEAN_CLAUDE", "USERPROFILE", "HOME", "APPDATA", "LOCALAPPDATA"]
     },
     "dev": {
       "dependsOn": ["^build"],

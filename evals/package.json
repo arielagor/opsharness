@@ -1,0 +1,28 @@
+{
+  "name": "@opsharness/evals",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Scenario evals for the harness: deterministic (scripted model) and an opt-in live mode. SYNTHETIC data and the Distru mock only.",
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint . --max-warnings 0",
+    "evals": "tsc -p tsconfig.build.json && node dist/run.js",
+    "evals:live": "tsc -p tsconfig.build.json && node dist/run.js --live"
+  },
+  "dependencies": {
+    "@opsharness/db": "workspace:*",
+    "@opsharness/distru-mock": "workspace:*",
+    "@opsharness/harness": "workspace:*",
+    "@opsharness/mcp-distru": "workspace:*",
+    "@opsharness/telemetry": "workspace:*"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.26.0",
+    "@types/node": "^22.15.0",
+    "eslint": "^9.26.0",
+    "typescript": "~5.8.3",
+    "typescript-eslint": "^8.32.0"
+  }
+}
