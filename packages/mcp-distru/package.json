@@ -1,0 +1,43 @@
+{
+  "name": "@opsharness/mcp-distru",
+  "version": "0.1.0",
+  "private": true,
+  "description": "MCP server over the Distru client, built per principal: read tools, two-phase writes (propose_order_change, then apply_plan only after a recorded human approval). stdio and Streamable HTTP transports.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "bin": {
+    "mcp-distru-stdio": "./dist/stdio.js",
+    "mcp-distru-http": "./dist/http-main.js"
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint . --max-warnings 0",
+    "test": "tsc -p tsconfig.build.json && vitest run"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.32.0",
+    "@opsharness/core": "workspace:*",
+    "@opsharness/distru-client": "workspace:*",
+    "@opsharness/distru-contract": "workspace:*",
+    "@opsharness/distru-mock": "workspace:*",
+    "@opsharness/telemetry": "workspace:*",
+    "zod": "4.6.5"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.26.0",
+    "@types/node": "^22.15.0",
+    "eslint": "^9.26.0",
+    "typescript": "~5.8.3",
+    "typescript-eslint": "^8.32.0",
+    "vitest": "^5.0.3"
+  }
+}
